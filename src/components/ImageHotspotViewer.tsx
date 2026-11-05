@@ -32,6 +32,7 @@ interface ImageHotspotViewerProps {
   balloonFontSize?: number;
   showPlayButtonInBalloon?: boolean;
   enablePinPulse?: boolean;
+  disableGlobalAudio?: boolean;
 }
 
 export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
@@ -55,6 +56,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
   balloonFontSize = 15,
   showPlayButtonInBalloon = false,
   enablePinPulse = true,
+  disableGlobalAudio = false,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -72,9 +74,6 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
   // Handle image click to add hotspot in Edit Mode
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageRef.current || !containerRef.current) return;
-
-    // Only create if we clicked the container itself, not a hotspot pin
-    if (e.target !== e.currentTarget) return;
 
     const rect = imageRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -107,7 +106,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
       const isAlreadySelected = selectedHotspotId === hotspot.id;
       onSelectHotspot(hotspot.id);
 
-      if (audioAutoPlay || isAlreadySelected) {
+      if (!disableGlobalAudio && (audioAutoPlay || isAlreadySelected)) {
         onPlayAudio(hotspot, currentLanguage);
       }
     }
@@ -177,13 +176,13 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
       <div className="absolute top-4 right-4 z-20">
         {isEditMode ? (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg text-xs animate-in fade-in">
-            <Plus className="w-4 h-4" />
+            <MapPin className="w-4 h-4 fill-current" />
             <span>Mover hotspot: Arraste para reposicionar | Clique para criar</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/90 text-white font-medium rounded-xl shadow-lg text-xs backdrop-blur-md">
-            <Volume2 className="w-3.5 h-3.5" />
-            <span>Clique nos pontos para ver a palavra e ouvir o áudio</span>
+            <MapPin className="w-3.5 h-3.5 fill-current" />
+            <span>Clique nos pontos para ver/ouvir a palavra</span>
           </div>
         )}
       </div>
@@ -196,6 +195,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
           isEditMode ? 'cursor-crosshair' : 'cursor-default'
         }`}
       >
+        {/* Fixed positioning container: using inline-block so it fits the image exactly */}
         <div className="relative inline-block max-w-full max-h-full">
           {/* Framed Image Container respecting chosen aspect ratio - Clean borderless */}
           <div
@@ -215,8 +215,8 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                 setImageLoaded(false);
                 setImageError(true);
               }}
-              className={`w-full h-full rounded-xl transition-opacity duration-300 pointer-events-auto shadow-md ${
-                imageFormat === 'free' ? 'object-contain max-h-[75vh]' : 'object-cover'
+              className={`rounded-xl transition-opacity duration-300 pointer-events-auto shadow-md ${
+                imageFormat === 'free' ? 'max-w-full max-h-[75vh]' : 'w-full h-full object-cover'
               } ${imageLoaded ? 'opacity-100' : 'opacity-20'}`}
             />
 
@@ -308,6 +308,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                         isPlaying={isPlaying}
                         fontSize={balloonFontSize}
                         showPlayButton={showPlayButtonInBalloon}
+                        disableAudio={disableGlobalAudio}
                       />
                     )}
                   </div>

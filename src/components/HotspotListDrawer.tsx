@@ -21,6 +21,7 @@ interface HotspotListDrawerProps {
   onDeleteHotspot: (id: string) => void;
   onAddNewHotspot: () => void;
   onPlayAudio: (hotspot: Hotspot, lang: LanguageCode) => void;
+  disableGlobalAudio?: boolean;
 }
 
 export const HotspotListDrawer: React.FC<HotspotListDrawerProps> = ({
@@ -34,6 +35,7 @@ export const HotspotListDrawer: React.FC<HotspotListDrawerProps> = ({
   onDeleteHotspot,
   onAddNewHotspot,
   onPlayAudio,
+  disableGlobalAudio = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -142,29 +144,33 @@ export const HotspotListDrawer: React.FC<HotspotListDrawerProps> = ({
                     )}
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                       <span>({hotspot.x}%, {hotspot.y}%)</span>
-                      {hasMp3 ? (
-                        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                          <Music className="w-3 h-3" /> MP3
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">Voz</span>
+                      {!disableGlobalAudio && (
+                        hasMp3 ? (
+                          <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                            <Music className="w-3 h-3" /> MP3
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Voz</span>
+                        )
                       )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPlayAudio(hotspot, currentLanguage);
-                    }}
-                    title="Ouvir áudio"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <Volume2 className="w-4 h-4" />
-                  </button>
+                  {!disableGlobalAudio && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPlayAudio(hotspot, currentLanguage);
+                      }}
+                      title="Ouvir áudio"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => {

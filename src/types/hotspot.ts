@@ -55,6 +55,7 @@ export interface HotspotProject {
   balloonFontSize: number; // size in px
   showPlayButtonInBalloon: boolean;
   enablePinPulse?: boolean; // Opção para pins cintilarem
+  disableGlobalAudio?: boolean; // Opção de não ter áudio no balão nem botão de play
   hotspots: Hotspot[];
   createdAt: string;
   updatedAt: string;

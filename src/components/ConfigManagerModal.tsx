@@ -17,6 +17,7 @@ import {
   MousePointer,
   MapPin,
   Hash,
+  VolumeX,
 } from 'lucide-react';
 import { Hotspot, HotspotProject, LanguageCode, PinStyleType } from '../types/hotspot';
 import { createEmptyHotspot } from '../utils/exportImport';
@@ -444,9 +445,6 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                           <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                             Hotspot #{index + 1}
                           </span>
-                          <span className="text-[11px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                            Posição: X: {hs.x}% | Y: {hs.y}%
-                          </span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -788,17 +786,18 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div
                     onClick={() =>
                       setFormData({
                         ...formData,
                         audioAutoPlay: true,
                         audioTriggerMode: 'auto',
+                        disableGlobalAudio: false,
                       })
                     }
                     className={`p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all ${
-                      formData.audioAutoPlay
+                      formData.audioAutoPlay && !formData.disableGlobalAudio
                         ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/50 ring-2 ring-indigo-500/20'
                         : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
                     }`}
@@ -810,7 +809,7 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                       <div className="text-xs font-bold text-slate-900 dark:text-white">
                         Tocar Automaticamente
                       </div>
-                      <div className="text-[10px] text-slate-400">Ao clicar no ponto / abrir balão</div>
+                      <div className="text-[10px] text-slate-400">Ao clicar no ponto</div>
                     </div>
                   </div>
 
@@ -820,11 +819,12 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                         ...formData,
                         audioAutoPlay: false,
                         audioTriggerMode: 'click',
-                        showPlayButtonInBalloon: true, // auto-enable play button so user can click it
+                        disableGlobalAudio: false,
+                        showPlayButtonInBalloon: true,
                       })
                     }
                     className={`p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all ${
-                      !formData.audioAutoPlay
+                      !formData.audioAutoPlay && !formData.disableGlobalAudio
                         ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/50 ring-2 ring-indigo-500/20'
                         : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
                     }`}
@@ -834,9 +834,34 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white">
-                        Apenas ao Apertar o Play
+                        Apenas ao Apertar Play
                       </div>
-                      <div className="text-[10px] text-slate-400">Não toca áudio ao abrir o balão</div>
+                      <div className="text-[10px] text-slate-400">Manual pelo botão</div>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        disableGlobalAudio: true,
+                        audioAutoPlay: false,
+                      })
+                    }
+                    className={`p-3 rounded-xl border cursor-pointer flex items-center gap-2.5 transition-all ${
+                      formData.disableGlobalAudio
+                        ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/50 ring-2 ring-indigo-500/20'
+                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="w-7 h-7 rounded-full bg-slate-400 text-white flex items-center justify-center shrink-0">
+                      <VolumeX className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        Sem Áudio
+                      </div>
+                      <div className="text-[10px] text-slate-400">Apenas texto no balão</div>
                     </div>
                   </div>
                 </div>

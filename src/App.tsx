@@ -243,14 +243,6 @@ export default function App() {
       <Header
         isEditMode={isEditMode}
         onToggleEditMode={() => setIsEditMode(!isEditMode)}
-        audioAutoPlay={audioAutoPlay}
-        onToggleAudioAutoPlay={() => {
-          setAudioAutoPlay(!audioAutoPlay);
-          showToast(
-            !audioAutoPlay ? 'Auto-play de áudio ativado' : 'Auto-play de áudio desativado',
-            'info'
-          );
-        }}
         hotspotsCount={project.hotspots.length}
         onOpenConfigManager={() => setIsConfigModalOpen(true)}
         onDownloadHtml={handleDownloadHtml}
@@ -306,6 +298,7 @@ export default function App() {
             balloonFontSize={project.balloonFontSize || 15}
             showPlayButtonInBalloon={project.showPlayButtonInBalloon ?? false}
             enablePinPulse={project.enablePinPulse !== false}
+            disableGlobalAudio={project.disableGlobalAudio}
           />
         </div>
       </main>
@@ -322,6 +315,7 @@ export default function App() {
         onDeleteHotspot={handleDeleteHotspot}
         onAddNewHotspot={handleAddNewHotspotManual}
         onPlayAudio={handlePlayAudio}
+        disableGlobalAudio={project.disableGlobalAudio}
       />
 
       {/* Edit Single Hotspot Modal */}

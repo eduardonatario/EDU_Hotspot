@@ -6,14 +6,12 @@ import {
   Settings,
   FileDown,
   List,
-  Headphones,
+  MapPin,
 } from 'lucide-react';
 
 interface HeaderProps {
   isEditMode: boolean;
   onToggleEditMode: () => void;
-  audioAutoPlay: boolean;
-  onToggleAudioAutoPlay: () => void;
   hotspotsCount: number;
   onOpenConfigManager: () => void;
   onDownloadHtml: () => void;
@@ -23,8 +21,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   isEditMode,
   onToggleEditMode,
-  audioAutoPlay,
-  onToggleAudioAutoPlay,
   hotspotsCount,
   onOpenConfigManager,
   onDownloadHtml,
@@ -36,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand / Logo */}
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <Headphones className="w-5 h-5" />
+            <MapPin className="w-5 h-5 fill-current" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -45,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
               </h1>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
-              Clique nos pontos para ver a palavra e ouvir a pronúncia
+              Clique nos pontos para ver/ouvir a palavra
             </p>
           </div>
         </div>
@@ -62,21 +58,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
             }`}
           >
-            <Edit2 className="w-3.5 h-3.5" />
+            <MapPin className={`w-3.5 h-3.5 ${isEditMode ? 'fill-current' : ''}`} />
             <span>Mover hotspot</span>
-          </button>
-
-          {/* Audio Auto-Play Toggle */}
-          <button
-            onClick={onToggleAudioAutoPlay}
-            title={audioAutoPlay ? 'Auto-play de áudio ativado ao clicar nos pontos' : 'Auto-play de áudio desligado'}
-            className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
-              audioAutoPlay
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            {audioAutoPlay ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
           {/* Configuration Area Button */}

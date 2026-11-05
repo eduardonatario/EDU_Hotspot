@@ -178,7 +178,7 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       background: transparent;
       color: #94a3b8;
       border: 1px solid #cbd5e1;
-      display: ${showPlayBtn ? 'flex' : 'none'};
+      display: ${showPlayBtn && !project.disableGlobalAudio ? 'flex' : 'none'};
       align-items: center;
       justify-content: center;
       font-size: 9px;
@@ -249,7 +249,7 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       const hotspotsLayer = root.querySelector('#hotspotsLayer');
 
       function playAudio(hotspot) {
-        if (hotspot.noAudio) return;
+        if (hotspot.noAudio || projectData.disableGlobalAudio) return;
         const textToSpeak = (hotspot.translations && hotspot.translations[currentLang]) || hotspot.text || '';
         const speechLang = hotspot.wordLanguage || currentLang;
 
@@ -369,7 +369,7 @@ export function generateStandaloneHtml(project: HotspotProject): string {
             wordSpan.innerText = wordText;
             mainRow.appendChild(wordSpan);
 
-            if (!hs.noAudio) {
+            if (!hs.noAudio && !projectData.disableGlobalAudio) {
               const playBtn = document.createElement('button');
               playBtn.className = 'balloon-play-btn';
               playBtn.innerHTML = '▶';

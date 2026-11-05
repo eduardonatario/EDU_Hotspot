@@ -10,6 +10,7 @@ interface SpeechBalloonProps {
   isPlaying: boolean;
   fontSize?: number;
   showPlayButton?: boolean;
+  disableAudio?: boolean;
 }
 
 export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
@@ -20,6 +21,7 @@ export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
   isPlaying,
   fontSize = 16,
   showPlayButton = false,
+  disableAudio = false,
 }) => {
   const word = hotspot.translations[currentLanguage] || hotspot.text || '';
   const secondaryWord = hotspot.secondaryText?.trim();
@@ -37,6 +39,12 @@ export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
     horizontalAlignClass = 'right-0 -translate-x-1';
     arrowHorizontalClass = 'right-5';
   }
+
+  const handleBalloonClick = () => {
+    if (!disableAudio) {
+      onPlayAudio(hotspot, currentLanguage);
+    }
+  };
 
   return (
     <div
@@ -59,21 +67,23 @@ export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
         {/* Balloon Content: Word first, then Play button in light gray, secondary word below, then Close 'X' */}
         <div className="flex items-start justify-between gap-3 min-w-0">
           <div
-            onClick={() => onPlayAudio(hotspot, currentLanguage)}
-            title="Clique para ouvir a pronúncia"
-            className="cursor-pointer group flex flex-col select-text min-w-0"
+            onClick={handleBalloonClick}
+            title={disableAudio ? '' : 'Clique para ouvir a pronúncia'}
+            className={`${disableAudio ? 'cursor-default' : 'cursor-pointer group'} flex flex-col select-text min-w-0`}
           >
             {/* Primary Word and Play Button row */}
             <div className="flex items-center gap-2">
               <span
                 style={{ fontSize: `${fontSize}px` }}
-                className="font-bold text-slate-900 dark:text-white tracking-tight leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors whitespace-nowrap"
+                className={`font-bold text-slate-900 dark:text-white tracking-tight leading-snug transition-colors whitespace-nowrap ${
+                  !disableAudio ? 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400' : ''
+                }`}
               >
                 {word}
               </span>
 
               {/* Play button: positioned AFTER the word, styled in cinza claro (light gray) */}
-              {showPlayButton && (
+              {showPlayButton && !disableAudio && (
                 <button
                   type="button"
                   onClick={(e) => {
