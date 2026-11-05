@@ -1,6 +1,8 @@
 {
-  "name": "Hotspot Vocab & Audio - Imagens Interativas",
+  "name": "EDU_Hotspot",
   "description": "Crie hotspots interativos em imagens com balões de texto, áudio MP3, tradução em tempo real e exportação/importação JSON.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
