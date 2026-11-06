@@ -14,7 +14,7 @@ import { ConfigManagerModal } from './components/ConfigManagerModal';
 import { HotspotListDrawer } from './components/HotspotListDrawer';
 import { HelpModal } from './components/HelpModal';
 import { createEmptyHotspot } from './utils/exportImport';
-import { downloadProjectAsHtml } from './utils/exportHtml';
+import { downloadProjectAsHtml, copyProjectHtmlToClipboard } from './utils/exportHtml';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 const STORAGE_KEY = 'interactive_hotspots_project_v3';
@@ -39,6 +39,7 @@ export default function App() {
             customHeight: parsed.customHeight || 800,
             balloonFontSize: typeof parsed.balloonFontSize === 'number' ? parsed.balloonFontSize : 15,
             showPlayButtonInBalloon: Boolean(parsed.showPlayButtonInBalloon),
+            hideBalloonClose: Boolean(parsed.hideBalloonClose),
           };
         }
       }
@@ -88,12 +89,19 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = audioManager.subscribe((state) => {
       setAudioState(state);
+      // Auto-close balloon on audio end if syncImageAudioClose is enabled
+      if (!state.isPlaying && selectedHotspotId) {
+        const activeHs = project.hotspots.find((h) => h.id === selectedHotspotId);
+        if (activeHs && activeHs.contentType === 'image' && activeHs.syncImageAudioClose) {
+          setSelectedHotspotId(null);
+        }
+      }
     });
     return () => {
       unsubscribe();
       audioManager.stop();
     };
-  }, []);
+  }, [selectedHotspotId, project.hotspots]);
 
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
@@ -104,9 +112,14 @@ export default function App() {
 
   const handlePlayAudio = useCallback(
     (hotspot: Hotspot, lang: LanguageCode) => {
-      audioManager.playHotspotAudio(hotspot, lang, project.enableSpeechSynthesis !== false);
+      audioManager.playHotspotAudio(
+        hotspot,
+        lang,
+        project.enableSpeechSynthesis !== false,
+        Boolean(project.readSecondaryTextDefault)
+      );
     },
-    [project.enableSpeechSynthesis]
+    [project.enableSpeechSynthesis, project.readSecondaryTextDefault]
   );
 
   const handleLanguageChange = (newLang: LanguageCode) => {
@@ -117,7 +130,12 @@ export default function App() {
     if (selectedHotspotId && audioAutoPlay) {
       const activeHs = project.hotspots.find((h) => h.id === selectedHotspotId);
       if (activeHs) {
-        audioManager.playHotspotAudio(activeHs, newLang, project.enableSpeechSynthesis !== false);
+        audioManager.playHotspotAudio(
+          activeHs,
+          newLang,
+          project.enableSpeechSynthesis !== false,
+          Boolean(project.readSecondaryTextDefault)
+        );
       }
     }
   };
@@ -173,6 +191,15 @@ export default function App() {
   const handleDownloadHtml = () => {
     downloadProjectAsHtml(project);
     showToast('Download do arquivo HTML iniciado!', 'success');
+  };
+
+  const handleCopyHtml = async () => {
+    const success = await copyProjectHtmlToClipboard(project);
+    if (success) {
+      showToast('Código HTML copiado para a área de transferência!', 'success');
+    } else {
+      showToast('Não foi possível copiar o HTML.', 'error');
+    }
   };
 
   // Batch AI Translation BR <-> EN
@@ -246,7 +273,7 @@ export default function App() {
         hotspotsCount={project.hotspots.length}
         onOpenConfigManager={() => setIsConfigModalOpen(true)}
         onDownloadHtml={handleDownloadHtml}
-        onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
+        onCopyHtml={handleCopyHtml}
       />
 
       {/* Toast Notification */}
@@ -299,6 +326,7 @@ export default function App() {
             showPlayButtonInBalloon={project.showPlayButtonInBalloon ?? false}
             enablePinPulse={project.enablePinPulse !== false}
             disableGlobalAudio={project.disableGlobalAudio}
+            hideBalloonClose={project.hideBalloonClose}
           />
         </div>
       </main>

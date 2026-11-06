@@ -7,6 +7,7 @@ import {
   FileDown,
   List,
   MapPin,
+  Copy,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -15,7 +16,7 @@ interface HeaderProps {
   hotspotsCount: number;
   onOpenConfigManager: () => void;
   onDownloadHtml: () => void;
-  onToggleDrawer: () => void;
+  onCopyHtml: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   hotspotsCount,
   onOpenConfigManager,
   onDownloadHtml,
-  onToggleDrawer,
+  onCopyHtml,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 py-2.5 transition-colors">
@@ -65,11 +66,24 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Configuration Area Button */}
           <button
             onClick={onOpenConfigManager}
-            title="Gerenciar URL da Imagem, Textos dos Hotspots e Arquivos MP3"
+            title="Gerenciar URL da Imagem, Textos dos Hotspots, Imagens e Áudios"
             className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-1.5 transition-colors shadow-sm border border-slate-200/60 dark:border-slate-700/60"
           >
             <Settings className="w-3.5 h-3.5 text-indigo-500" />
             <span>Configurações</span>
+            <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center ml-0.5">
+              {hotspotsCount}
+            </span>
+          </button>
+
+          {/* Copy HTML Button */}
+          <button
+            onClick={onCopyHtml}
+            title="Copiar código HTML gerado para a área de transferência"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-1.5 transition-colors shadow-sm border border-slate-200/60 dark:border-slate-700/60 active:scale-95"
+          >
+            <Copy className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Copiar HTML</span>
           </button>
 
           {/* Download HTML Button */}
@@ -80,19 +94,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <FileDown className="w-4 h-4" />
             <span>Baixar HTML</span>
-          </button>
-
-          {/* Hotspot Drawer List Toggle */}
-          <button
-            onClick={onToggleDrawer}
-            title="Ver lista de hotspots"
-            className="p-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors relative"
-          >
-            <List className="w-4 h-4" />
-            <span className="hidden md:inline">Hotspots</span>
-            <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center">
-              {hotspotsCount}
-            </span>
           </button>
         </div>
       </div>

@@ -61,17 +61,24 @@ class AudioManager {
   public async playHotspotAudio(
     hotspot: Hotspot,
     lang: LanguageCode,
-    allowSpeechSynthesis: boolean = true
+    allowSpeechSynthesis: boolean = true,
+    readSecondaryDefault: boolean = false
   ): Promise<boolean> {
     this.stop();
 
-    const wordToSpeak = hotspot.translations[lang] || hotspot.text;
+    const wordToSpeak = hotspot.translations[lang] || hotspot.text || '';
     const effectiveSpeechLang = hotspot.wordLanguage || lang;
+
+    const shouldReadSecondary = hotspot.readSecondaryText ?? readSecondaryDefault;
+    const fullTextToSpeak =
+      shouldReadSecondary && hotspot.secondaryText && hotspot.secondaryText.trim()
+        ? `${wordToSpeak}. ${hotspot.secondaryText.trim()}`
+        : wordToSpeak;
 
     // If user specified system speech preference for this hotspot, speak directly if speech is allowed
     if (hotspot.useSystemSpeech) {
       if (!allowSpeechSynthesis) return false;
-      return this.speakText(wordToSpeak, effectiveSpeechLang, hotspot.id);
+      return this.speakText(fullTextToSpeak, effectiveSpeechLang, hotspot.id);
     }
 
     const customLangAudio = hotspot.audioUrlsByLang?.[lang];
@@ -101,7 +108,7 @@ class AudioManager {
           console.warn('Audio URL playback error:', e);
           this.currentAudio = null;
           if (allowSpeechSynthesis) {
-            this.speakText(wordToSpeak, effectiveSpeechLang, hotspot.id);
+            this.speakText(fullTextToSpeak, effectiveSpeechLang, hotspot.id);
           }
         });
 
@@ -110,13 +117,13 @@ class AudioManager {
       } catch (err) {
         console.warn('Could not play custom audio:', err);
         if (allowSpeechSynthesis) {
-          return this.speakText(wordToSpeak, effectiveSpeechLang, hotspot.id);
+          return this.speakText(fullTextToSpeak, effectiveSpeechLang, hotspot.id);
         }
         return false;
       }
     } else {
       if (allowSpeechSynthesis) {
-        return this.speakText(wordToSpeak, effectiveSpeechLang, hotspot.id);
+        return this.speakText(fullTextToSpeak, effectiveSpeechLang, hotspot.id);
       }
       return false;
     }

@@ -33,6 +33,7 @@ interface ImageHotspotViewerProps {
   showPlayButtonInBalloon?: boolean;
   enablePinPulse?: boolean;
   disableGlobalAudio?: boolean;
+  hideBalloonClose?: boolean;
 }
 
 export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
@@ -57,6 +58,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
   showPlayButtonInBalloon = false,
   enablePinPulse = true,
   disableGlobalAudio = false,
+  hideBalloonClose = false,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -71,36 +73,27 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
     setImageError(false);
   }, [imageUrl]);
 
-  // Handle image click to add hotspot in Edit Mode
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imageRef.current || !containerRef.current) return;
-
-    const rect = imageRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    // Check if clicked inside image bounds
-    if (clickX < 0 || clickX > rect.width || clickY < 0 || clickY > rect.height) {
-      return;
+  // When switching to move mode, close any open balloon to ensure clean dragging
+  useEffect(() => {
+    if (isEditMode && selectedHotspotId) {
+      onSelectHotspot(null);
     }
+  }, [isEditMode, selectedHotspotId, onSelectHotspot]);
 
-    const xPercent = (clickX / rect.width) * 100;
-    const yPercent = (clickY / rect.height) * 100;
-
-    if (isEditMode) {
-      const newHotspot = createEmptyHotspot(xPercent, yPercent, 'Novo Objeto');
-      const updated = [...hotspots, newHotspot];
-      onUpdateHotspots(updated);
-      onSelectHotspot(newHotspot.id);
-      onOpenEditModal(newHotspot);
+  // Handle canvas click - when clicking outside a hotspot, close any open balloon
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // When "Mover hotspots" is active, do NOT create new hotspots
+    if (isEditMode) return;
+    if (selectedHotspotId) {
+      onSelectHotspot(null);
     }
   };
 
-  // Hotspot Dragging support in Edit Mode
+  // Hotspot Dragging support in Edit / Move Mode
   const handleMouseDownOnPin = (e: React.MouseEvent, hotspot: Hotspot) => {
     e.stopPropagation();
     if (isEditMode) {
-      // Don't select the hotspot in edit mode to prevent balloon, just drag
+      // In move mode: only allow dragging, do not open edit modal and do not select/open balloon
       setDraggingHotspotId(hotspot.id);
     } else {
       const isAlreadySelected = selectedHotspotId === hotspot.id;
@@ -177,7 +170,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
         {isEditMode ? (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg text-xs animate-in fade-in">
             <MapPin className="w-4 h-4 fill-current" />
-            <span>Mover hotspot: Arraste para reposicionar | Clique para criar</span>
+            <span>Mover hotspot: Arraste para reposicionar</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/90 text-white font-medium rounded-xl shadow-lg text-xs backdrop-blur-md">
@@ -191,9 +184,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
-        className={`w-full h-full flex items-center justify-center p-4 sm:p-8 overflow-auto ${
-          isEditMode ? 'cursor-crosshair' : 'cursor-default'
-        }`}
+        className="w-full h-full flex items-center justify-center p-4 sm:p-8 overflow-auto cursor-default"
       >
         {/* Fixed positioning container: using inline-block so it fits the image exactly */}
         <div className="relative inline-block max-w-full max-h-full">
@@ -215,9 +206,15 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                 setImageLoaded(false);
                 setImageError(true);
               }}
+              onClick={() => {
+                if (isEditMode) return;
+                if (selectedHotspotId) {
+                  onSelectHotspot(null);
+                }
+              }}
               className={`rounded-xl transition-opacity duration-300 pointer-events-auto shadow-md ${
                 imageFormat === 'free' ? 'max-w-full max-h-[75vh]' : 'w-full h-full object-cover'
-              } ${imageLoaded ? 'opacity-100' : 'opacity-20'}`}
+              } ${imageLoaded ? 'opacity-100 cursor-pointer' : 'opacity-20'}`}
             />
 
             {/* Loading Skeleton */}
@@ -252,8 +249,12 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                   <div
                     key={hotspot.id}
                     style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-20 transition-transform ${
-                      draggingHotspotId === hotspot.id ? 'scale-125 z-40' : 'hover:scale-110'
+                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-transform ${
+                      isSelected
+                        ? 'z-[70]'
+                        : draggingHotspotId === hotspot.id
+                        ? 'scale-125 z-40'
+                        : 'z-20 hover:scale-110'
                     }`}
                     onMouseEnter={() => setHoveredHotspotId(hotspot.id)}
                     onMouseLeave={() => setHoveredHotspotId(null)}
@@ -262,6 +263,10 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                     <button
                       type="button"
                       onMouseDown={(e) => handleMouseDownOnPin(e, hotspot)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isEditMode) return;
+                      }}
                       className={`relative group flex items-center justify-center transition-all duration-200 outline-none ${
                         isEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
                       }`}
@@ -309,6 +314,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                         fontSize={balloonFontSize}
                         showPlayButton={showPlayButtonInBalloon}
                         disableAudio={disableGlobalAudio}
+                        hideCloseButton={hideBalloonClose}
                       />
                     )}
                   </div>

@@ -18,27 +18,29 @@ export function generateStandaloneHtml(project: HotspotProject): string {
     formatCss = 'max-width: 100%; max-height: 76vh;';
   }
 
-  return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    #hotspot-embed-root {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      position: relative;
-      display: inline-block;
+  // Generate inner HTML & CSS for the Shadow DOM
+  const innerCss = `
+    :host {
+      display: block;
       width: 100%;
-      height: auto;
+      box-sizing: border-box;
       line-height: normal;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    #hotspot-embed-root * {
+    * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-    #hotspot-embed-root .canvas-wrapper {
+    .embed-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+      background: transparent;
+    }
+    .canvas-wrapper {
       position: relative;
       display: inline-block;
       border-radius: 16px;
@@ -49,14 +51,14 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       height: auto;
       ${formatCss}
     }
-    #hotspot-embed-root .main-image {
+    .main-image {
       display: block;
       width: 100%;
       height: 100%;
       border-radius: 16px;
       object-fit: ${format === 'free' ? 'contain' : 'cover'};
     }
-    #hotspot-embed-root .hotspot-pin {
+    .hotspot-pin {
       position: absolute;
       transform: translate(-50%, -50%);
       width: 34px;
@@ -75,11 +77,11 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       transition: transform 0.2s, box-shadow 0.2s;
       z-index: 20;
     }
-    #hotspot-embed-root .hotspot-pin:hover {
+    .hotspot-pin:hover {
       transform: translate(-50%, -50%) scale(1.1);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
     }
-    #hotspot-embed-root .pulse-ring {
+    .pulse-ring {
       position: absolute;
       width: 100%;
       height: 100%;
@@ -93,7 +95,7 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       0% { transform: scale(1); opacity: 0.8; }
       100% { transform: scale(2.2); opacity: 0; }
     }
-    #hotspot-embed-root .hover-tooltip {
+    .hover-tooltip {
       position: absolute;
       bottom: calc(100% + 8px);
       left: 50%;
@@ -111,19 +113,22 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       z-index: 50;
     }
-    #hotspot-embed-root .hotspot-pin:hover .hover-tooltip {
+    .hotspot-pin:hover .hover-tooltip {
       display: ${showHoverTooltip ? 'block' : 'none'};
     }
-    #hotspot-embed-root .speech-balloon {
+    .hotspot-pin.active {
+      z-index: 999 !important;
+    }
+    .speech-balloon {
       position: absolute;
-      z-index: 40;
+      z-index: 1000 !important;
       background: #ffffff;
       color: #0f172a;
       padding: 10px 14px;
       border-radius: 14px;
       box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
       width: max-content;
-      max-width: min(85vw, 380px);
+      max-width: min(90vw, 480px);
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -135,19 +140,19 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       from { opacity: 0; transform: scale(0.92); }
       to { opacity: 1; transform: scale(1); }
     }
-    #hotspot-embed-root .speech-balloon.place-top {
+    .speech-balloon.place-top {
       bottom: 100%;
       margin-bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
     }
-    #hotspot-embed-root .speech-balloon.place-bottom {
+    .speech-balloon.place-bottom {
       top: 100%;
       margin-top: 12px;
       left: 50%;
       transform: translateX(-50%);
     }
-    #hotspot-embed-root .balloon-stem {
+    .balloon-stem {
       position: absolute;
       width: 10px;
       height: 10px;
@@ -155,23 +160,56 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       transform: rotate(45deg);
       left: calc(50% - 5px);
     }
-    #hotspot-embed-root .speech-balloon.place-top .balloon-stem {
+    .speech-balloon.place-top .balloon-stem {
       bottom: -5px;
     }
-    #hotspot-embed-root .speech-balloon.place-bottom .balloon-stem {
+    .speech-balloon.place-bottom .balloon-stem {
       top: -5px;
     }
-    #hotspot-embed-root .balloon-body {
+    .balloon-body {
       display: flex;
       flex-direction: column;
       cursor: pointer;
+      min-width: 0;
+      flex: 1;
     }
-    #hotspot-embed-root .balloon-main-row {
+    .balloon-main-row {
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    #hotspot-embed-root .balloon-play-btn {
+    .balloon-image-container {
+      max-width: 260px;
+      max-height: 200px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+    .balloon-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 12px;
+      max-height: 190px;
+    }
+    .balloon-image-play {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .balloon-play-btn {
       width: 20px;
       height: 20px;
       border-radius: 50%;
@@ -186,31 +224,35 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       flex-shrink: 0;
       transition: all 0.15s;
     }
-    #hotspot-embed-root .balloon-play-btn:hover {
+    .balloon-play-btn:hover {
       background: #f1f5f9;
       color: #475569;
       border-color: #94a3b8;
     }
-    #hotspot-embed-root .balloon-word {
+    .balloon-word {
       font-size: ${fontSize}px;
       font-weight: 700;
       color: #0f172a;
       letter-spacing: -0.01em;
-      line-height: 1.2;
-      white-space: nowrap;
+      line-height: 1.25;
+      word-break: break-word;
     }
-    #hotspot-embed-root .balloon-word:hover {
+    .balloon-word:hover {
       color: #4f46e5;
     }
-    #hotspot-embed-root .balloon-sec {
-      font-size: 11px;
-      color: #94a3b8;
+    .balloon-sec {
+      font-size: 12px;
+      color: #64748b;
       font-weight: 500;
-      margin-top: 2px;
-      line-height: 1.2;
-      white-space: nowrap;
+      margin-top: 4px;
+      line-height: 1.35;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      text-align: left;
+      max-width: 100%;
     }
-    #hotspot-embed-root .balloon-close {
+    .balloon-close {
       background: transparent;
       border: none;
       color: #94a3b8;
@@ -224,34 +266,69 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       justify-content: center;
       transition: background 0.15s, color 0.15s;
     }
-    #hotspot-embed-root .balloon-close:hover {
+    .balloon-close:hover {
       background: #f1f5f9;
       color: #0f172a;
     }
-  </style>
-</head>
-<body>
-  <div id="hotspot-embed-root">
-    <div class="canvas-wrapper" id="canvasWrapper">
-      <img src="${escapeHtml(project.imageUrl)}" alt="Imagem Interativa" class="main-image" id="mainImage">
-      <div id="hotspotsLayer"></div>
-    </div>
-  </div>
+  `;
 
-  <script>
-    (function() {
+  return `<!-- INÍCIO DO EMBED HOTSPOT INTERATIVO (SANDBOX / SHADOW DOM ISOLADO) -->
+<hotspot-widget></hotspot-widget>
+<script>
+(function() {
+  if (customElements.get('hotspot-widget')) return;
+
+  class HotspotWidget extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+    }
+
+    connectedCallback() {
       const projectData = ${serializedProject};
       let currentLang = projectData.defaultLanguage || 'pt';
       let selectedHotspotId = null;
       let currentAudio = null;
 
-      const root = document.getElementById('hotspot-embed-root');
-      const hotspotsLayer = root.querySelector('#hotspotsLayer');
+      const style = document.createElement('style');
+      style.textContent = ${JSON.stringify(innerCss)};
 
-      function playAudio(hotspot) {
+      const container = document.createElement('div');
+      container.className = 'embed-container';
+      container.innerHTML = \`
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <img src="\${${JSON.stringify(escapeHtml(project.imageUrl))}}" alt="Imagem Interativa" class="main-image" id="mainImage">
+          <div id="hotspotsLayer"></div>
+        </div>
+      \`;
+
+      this.shadowRoot.appendChild(style);
+      this.shadowRoot.appendChild(container);
+
+      const hotspotsLayer = this.shadowRoot.querySelector('#hotspotsLayer');
+      const canvasWrapper = this.shadowRoot.querySelector('#canvasWrapper');
+
+      // Click on canvas / image outside hotspot closes active balloon
+      canvasWrapper.addEventListener('click', function(e) {
+        if (selectedHotspotId) {
+          closeBalloon();
+        }
+      });
+
+      const onAudioEnd = (hs) => {
+        if (hs && hs.contentType === 'image' && hs.syncImageAudioClose && selectedHotspotId === hs.id) {
+          closeBalloon();
+        }
+      };
+
+      const playAudio = (hotspot) => {
         if (hotspot.noAudio || projectData.disableGlobalAudio) return;
-        const textToSpeak = (hotspot.translations && hotspot.translations[currentLang]) || hotspot.text || '';
+        const primaryText = (hotspot.translations && hotspot.translations[currentLang]) || hotspot.text || '';
         const speechLang = hotspot.wordLanguage || currentLang;
+        const readSec = hotspot.readSecondaryText ?? projectData.readSecondaryTextDefault;
+        const textToSpeak = (readSec && hotspot.secondaryText && hotspot.secondaryText.trim())
+          ? (primaryText + '. ' + hotspot.secondaryText.trim())
+          : primaryText;
 
         if (currentAudio) {
           currentAudio.pause();
@@ -264,39 +341,45 @@ export function generateStandaloneHtml(project: HotspotProject): string {
         const allowTTS = projectData.enableSpeechSynthesis !== false;
 
         if (hotspot.useSystemSpeech || !hotspot.audioUrl) {
-          if (allowTTS) speakSystem(textToSpeak, speechLang);
+          if (allowTTS) speakSystem(textToSpeak, speechLang, hotspot);
           return;
         }
 
         try {
           const audio = new Audio(hotspot.audioUrl);
           currentAudio = audio;
-          audio.play().catch(e => {
-            if (allowTTS) speakSystem(textToSpeak, speechLang);
+          audio.addEventListener('ended', function() {
+            onAudioEnd(hotspot);
+          });
+          audio.play().catch(function() {
+            if (allowTTS) speakSystem(textToSpeak, speechLang, hotspot);
           });
         } catch (err) {
-          if (allowTTS) speakSystem(textToSpeak, speechLang);
+          if (allowTTS) speakSystem(textToSpeak, speechLang, hotspot);
         }
-      }
+      };
 
-      function speakSystem(text, lang) {
+      const speakSystem = (text, lang, hotspot) => {
         if (!('speechSynthesis' in window) || !text) return;
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang === 'en' ? 'en-US' : 'pt-BR';
         utterance.rate = 0.95;
+        utterance.onend = function() {
+          if (hotspot) onAudioEnd(hotspot);
+        };
         window.speechSynthesis.speak(utterance);
-      }
+      };
 
-      function selectHotspot(id) {
+      const selectHotspot = (id) => {
         selectedHotspotId = id;
         renderHotspots();
-        const hs = projectData.hotspots.find(h => h.id === id);
+        const hs = projectData.hotspots.find(function(h) { return h.id === id; });
         if (hs && projectData.audioAutoPlay !== false) {
           playAudio(hs);
         }
-      }
+      };
 
-      function closeBalloon() {
+      const closeBalloon = () => {
         selectedHotspotId = null;
         if (currentAudio) {
           currentAudio.pause();
@@ -306,21 +389,23 @@ export function generateStandaloneHtml(project: HotspotProject): string {
           window.speechSynthesis.cancel();
         }
         renderHotspots();
-      }
+      };
 
-      function renderHotspots() {
+      const renderHotspots = () => {
         hotspotsLayer.innerHTML = '';
 
-        projectData.hotspots.forEach((hs, index) => {
+        projectData.hotspots.forEach(function(hs, index) {
           const pin = document.createElement('div');
           pin.className = 'hotspot-pin';
           pin.style.left = hs.x + '%';
           pin.style.top = hs.y + '%';
           if (hs.color) pin.style.backgroundColor = hs.color;
 
-          const pulse = document.createElement('div');
-          pulse.className = 'pulse-ring';
-          pin.appendChild(pulse);
+          if (projectData.enablePinPulse !== false) {
+            const pulse = document.createElement('div');
+            pulse.className = 'pulse-ring';
+            pin.appendChild(pulse);
+          }
 
           const label = document.createElement('span');
           label.style.display = 'flex';
@@ -339,15 +424,20 @@ export function generateStandaloneHtml(project: HotspotProject): string {
           tooltip.innerText = wordText;
           pin.appendChild(tooltip);
 
-          pin.addEventListener('click', (e) => {
+          pin.addEventListener('click', function(e) {
             e.stopPropagation();
             selectHotspot(hs.id);
           });
 
           if (selectedHotspotId === hs.id) {
+            pin.classList.add('active');
+            pin.style.zIndex = '999';
             const placeTop = hs.y >= 35;
             const balloon = document.createElement('div');
             balloon.className = 'speech-balloon ' + (placeTop ? 'place-top' : 'place-bottom');
+            balloon.addEventListener('click', function(e) {
+              e.stopPropagation();
+            });
 
             const stem = document.createElement('div');
             stem.className = 'balloon-stem';
@@ -355,61 +445,84 @@ export function generateStandaloneHtml(project: HotspotProject): string {
 
             const body = document.createElement('div');
             body.className = 'balloon-body';
-            body.title = 'Clique para ouvir novamente';
-            body.addEventListener('click', (e) => {
+            body.title = 'Clique para ouvir áudio';
+            body.addEventListener('click', function(e) {
               e.stopPropagation();
               playAudio(hs);
             });
 
-            const mainRow = document.createElement('div');
-            mainRow.className = 'balloon-main-row';
+            if (hs.contentType === 'image') {
+              const imgContainer = document.createElement('div');
+              imgContainer.className = 'balloon-image-container';
+              const img = document.createElement('img');
+              img.src = hs.balloonImageUrl || '';
+              img.alt = wordText || 'Hotspot';
+              imgContainer.appendChild(img);
 
-            const wordSpan = document.createElement('span');
-            wordSpan.className = 'balloon-word';
-            wordSpan.innerText = wordText;
-            mainRow.appendChild(wordSpan);
+              if (!hs.noAudio && !projectData.disableGlobalAudio && (projectData.showPlayButtonInBalloon || hs.audioUrl)) {
+                const playBtn = document.createElement('div');
+                playBtn.className = 'balloon-image-play';
+                playBtn.innerHTML = '▶';
+                imgContainer.appendChild(playBtn);
+              }
 
-            if (!hs.noAudio && !projectData.disableGlobalAudio) {
-              const playBtn = document.createElement('button');
-              playBtn.className = 'balloon-play-btn';
-              playBtn.innerHTML = '▶';
-              playBtn.title = 'Ouvir pronúncia';
-              mainRow.appendChild(playBtn);
-            }
+              body.appendChild(imgContainer);
+            } else {
+              const mainRow = document.createElement('div');
+              mainRow.className = 'balloon-main-row';
 
-            body.appendChild(mainRow);
+              const wordSpan = document.createElement('span');
+              wordSpan.className = 'balloon-word';
+              wordSpan.innerText = wordText;
+              mainRow.appendChild(wordSpan);
 
-            if (hs.secondaryText) {
-              const secSpan = document.createElement('span');
-              secSpan.className = 'balloon-sec';
-              secSpan.innerText = hs.secondaryText;
-              body.appendChild(secSpan);
+              if (!hs.noAudio && !projectData.disableGlobalAudio) {
+                const playBtn = document.createElement('button');
+                playBtn.className = 'balloon-play-btn';
+                playBtn.innerHTML = '▶';
+                playBtn.title = 'Ouvir pronúncia';
+                mainRow.appendChild(playBtn);
+              }
+
+              body.appendChild(mainRow);
+
+              if (hs.secondaryText) {
+                const secSpan = document.createElement('span');
+                secSpan.className = 'balloon-sec';
+                secSpan.innerText = hs.secondaryText;
+                body.appendChild(secSpan);
+              }
             }
 
             balloon.appendChild(body);
 
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'balloon-close';
-            closeBtn.innerHTML = '✕';
-            closeBtn.title = 'Fechar';
-            closeBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              closeBalloon();
-            });
-            balloon.appendChild(closeBtn);
+            if (!projectData.hideBalloonClose) {
+              const closeBtn = document.createElement('button');
+              closeBtn.className = 'balloon-close';
+              closeBtn.innerHTML = '✕';
+              closeBtn.title = 'Fechar';
+              closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeBalloon();
+              });
+              balloon.appendChild(closeBtn);
+            }
 
             pin.appendChild(balloon);
           }
 
           hotspotsLayer.appendChild(pin);
         });
-      }
+      };
 
       renderHotspots();
-    })();
-  </script>
-</body>
-</html>`;
+    }
+  }
+
+  customElements.define('hotspot-widget', HotspotWidget);
+})();
+</script>
+<!-- FIM DO EMBED HOTSPOT INTERATIVO -->`;
 }
 
 function escapeHtml(str: string): string {
@@ -436,4 +549,28 @@ export function downloadProjectAsHtml(project: HotspotProject, filename?: string
   downloadAnchor.click();
   downloadAnchor.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function copyProjectHtmlToClipboard(project: HotspotProject): Promise<boolean> {
+  const htmlContent = generateStandaloneHtml(project);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(htmlContent);
+      return true;
+    }
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = htmlContent;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error('Failed to copy HTML to clipboard', err);
+    return false;
+  }
 }

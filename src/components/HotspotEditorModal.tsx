@@ -10,6 +10,7 @@ import {
   Check,
   Languages,
   Info,
+  Volume2,
 } from 'lucide-react';
 import { Hotspot, LanguageCode } from '../types/hotspot';
 
@@ -243,13 +244,37 @@ export const HotspotEditorModal: React.FC<HotspotEditorModalProps> = ({
                   <span>Segunda Palavra / Subtítulo (Opcional)</span>
                   <span className="text-[10px] text-slate-400 font-normal">Aparece abaixo em cinza menor</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
+                  rows={2}
                   value={formData.secondaryText || ''}
                   onChange={(e) => setFormData({ ...formData, secondaryText: e.target.value })}
-                  placeholder="Ex: substantivo, /bʊk/, tradução..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm"
+                  placeholder="Ex: substantivo, tradução, frase de exemplo, explicação..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm resize-y"
                 />
+
+                {/* Toggle: Ativar ou não leitura da Segunda Palavra / Subtítulo */}
+                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Volume2 className="w-4 h-4 text-indigo-500 shrink-0" />
+                    <div>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                        Ler também a segunda palavra / subtítulo
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                        Na reprodução de voz (TTS), lê o subtítulo logo após a palavra principal
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.readSecondaryText)}
+                      onChange={(e) => setFormData({ ...formData, readSecondaryText: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
               </div>
 
               {/* Language selection to read the word */}

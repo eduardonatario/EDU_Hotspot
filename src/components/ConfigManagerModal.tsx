@@ -18,6 +18,9 @@ import {
   MapPin,
   Hash,
   VolumeX,
+  ChevronDown,
+  ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { Hotspot, HotspotProject, LanguageCode, PinStyleType } from '../types/hotspot';
 import { createEmptyHotspot } from '../utils/exportImport';
@@ -47,12 +50,15 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
     pinStyle: project.pinStyle || 'pin',
     balloonFontSize: project.balloonFontSize || 15,
     showPlayButtonInBalloon: project.showPlayButtonInBalloon ?? false,
+    hideBalloonClose: project.hideBalloonClose ?? false,
+    readSecondaryTextDefault: project.readSecondaryTextDefault ?? false,
   }));
 
   const [imagePreviewError, setImagePreviewError] = useState(false);
   const [testingHotspotId, setTestingHotspotId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'image' | 'hotspots' | 'balloon'>('image');
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
+  const [expandedHotspotIds, setExpandedHotspotIds] = useState<Record<string, boolean>>({});
 
   React.useEffect(() => {
     if (isOpen) {
@@ -65,10 +71,42 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
         pinStyle: project.pinStyle || 'pin',
         balloonFontSize: project.balloonFontSize || 15,
         showPlayButtonInBalloon: project.showPlayButtonInBalloon ?? false,
+        hideBalloonClose: project.hideBalloonClose ?? false,
+        readSecondaryTextDefault: project.readSecondaryTextDefault ?? false,
       });
+      // All hotspots closed by default
+      setExpandedHotspotIds({});
       setFeedbackNotice(null);
     }
   }, [isOpen, project]);
+
+  const toggleExpandHotspot = (id: string) => {
+    setExpandedHotspotIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleUpdateHotspotContentType = (id: string, contentType: 'text' | 'image') => {
+    setFormData((prev) => ({
+      ...prev,
+      hotspots: prev.hotspots.map((hs) => (hs.id === id ? { ...hs, contentType } : hs)),
+    }));
+  };
+
+  const handleUpdateHotspotBalloonImageUrl = (id: string, balloonImageUrl: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      hotspots: prev.hotspots.map((hs) => (hs.id === id ? { ...hs, balloonImageUrl } : hs)),
+    }));
+  };
+
+  const handleUpdateHotspotSyncClose = (id: string, syncImageAudioClose: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      hotspots: prev.hotspots.map((hs) => (hs.id === id ? { ...hs, syncImageAudioClose } : hs)),
+    }));
+  };
 
   if (!isOpen) return null;
 
@@ -134,6 +172,13 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
     }));
   };
 
+  const handleUpdateHotspotReadSecondaryText = (id: string, readSecondaryText: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      hotspots: prev.hotspots.map((hs) => (hs.id === id ? { ...hs, readSecondaryText } : hs)),
+    }));
+  };
+
   const handleUpdateHotspotSystemSpeech = (id: string, useSystemSpeech: boolean) => {
     setFormData((prev) => ({
       ...prev,
@@ -147,6 +192,10 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       hotspots: [...prev.hotspots, newHs],
+    }));
+    setExpandedHotspotIds((prev) => ({
+      ...prev,
+      [newHs.id]: true,
     }));
     setActiveTab('hotspots');
     setFeedbackNotice('Novo hotspot adicionado à tabela.');
@@ -172,9 +221,16 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
       setTestingHotspotId(null);
     } else {
       setTestingHotspotId(hotspot.id);
-      audioManager.playHotspotAudio(hotspot, hotspot.wordLanguage || currentLanguage).then(() => {
-        setTimeout(() => setTestingHotspotId(null), 2500);
-      });
+      audioManager
+        .playHotspotAudio(
+          hotspot,
+          hotspot.wordLanguage || currentLanguage,
+          true,
+          Boolean(formData.readSecondaryTextDefault)
+        )
+        .then(() => {
+          setTimeout(() => setTestingHotspotId(null), 2500);
+        });
     }
   };
 
@@ -424,16 +480,33 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                   const isTesting = testingHotspotId === hs.id;
                   const wordLang = hs.wordLanguage || 'pt';
                   const currentWord = hs.text || hs.translations[wordLang] || '';
+                  const isExpanded = Boolean(expandedHotspotIds[hs.id]);
+                  const isImageMode = hs.contentType === 'image';
 
                   return (
                     <div
                       key={hs.id}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-sm space-y-3"
+                      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden transition-all"
                     >
-                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2">
-                        <div className="flex items-center gap-2">
+                      {/* Collapsible Card Header: Clicking toggles expand/collapse */}
+                      <div
+                        onClick={() => toggleExpandHotspot(hs.id)}
+                        className="p-3.5 sm:p-4 flex items-center justify-between gap-2 cursor-pointer bg-slate-50/80 hover:bg-slate-100/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 transition-colors select-none"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <button
+                            type="button"
+                            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-slate-500" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-500" />
+                            )}
+                          </button>
+
                           <span
-                            className="w-6 h-6 rounded-full text-white text-xs font-extrabold flex items-center justify-center shadow-sm"
+                            className="w-6 h-6 rounded-full text-white text-xs font-extrabold flex items-center justify-center shadow-sm shrink-0"
                             style={{ backgroundColor: hs.color || '#4F46E5' }}
                           >
                             {formData.pinStyle === 'pin' ? (
@@ -442,27 +515,33 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                               index + 1
                             )}
                           </span>
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                            Hotspot #{index + 1}
-                          </span>
+
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                              Hotspot #{index + 1}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">
+                              — {isImageMode ? '🖼️ (Apenas Imagem)' : currentWord || '(Sem palavra)'}
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => handleTestAudio(hs)}
-                            title="Ouvir pronúncia da palavra"
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors"
+                            title="Ouvir áudio"
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center gap-1 border border-slate-200/80 dark:border-slate-600 transition-colors shadow-xs"
                           >
                             {isTesting ? (
                               <Pause className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
                             ) : (
                               <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
                             )}
-                            <span>{isTesting ? 'Tocando...' : 'Testar'}</span>
+                            <span className="hidden sm:inline">{isTesting ? 'Tocando...' : 'Testar'}</span>
                           </button>
 
-                          {/* Fixed Delete Button: deletes immediately */}
+                          {/* Fixed Delete Button */}
                           <button
                             type="button"
                             onClick={() => handleDeleteHotspot(hs.id)}
@@ -474,106 +553,224 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Single space for ONE word with language selector for reading as requested */}
-                      <div className="space-y-2">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Palavra do Hotspot
-                          </label>
-                          <input
-                            type="text"
-                            value={currentWord}
-                            onChange={(e) => handleUpdateHotspotWord(hs.id, e.target.value)}
-                            placeholder="Digite a palavra que aparecerá no balão..."
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-semibold focus:bg-white dark:focus:bg-slate-800"
-                          />
-                        </div>
+                      {/* Collapsible Content */}
+                      {isExpanded && (
+                        <div className="p-4 space-y-3.5 border-t border-slate-100 dark:border-slate-800">
+                          {/* Option: Tipo de Conteúdo do Balão (Texto vs Apenas Imagem) */}
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                              Exibição no Balão:
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateHotspotContentType(hs.id, 'text')}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                                  !isImageMode
+                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 border-indigo-500 shadow-sm'
+                                    : 'bg-transparent text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Texto (Palavra)</span>
+                              </button>
 
-                        {/* Language Selection for Reading the Word */}
-                        <div className="flex items-center gap-3 pt-1">
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            Idioma para leitura da palavra:
-                          </span>
-                          <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateHotspotLanguage(hs.id, 'pt')}
-                              className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
-                                wordLang === 'pt'
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm'
-                                  : 'text-slate-400 hover:text-slate-600'
-                              }`}
-                            >
-                              <span>🇧🇷</span>
-                              <span>Português</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateHotspotLanguage(hs.id, 'en')}
-                              className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
-                                wordLang === 'en'
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm'
-                                  : 'text-slate-400 hover:text-slate-600'
-                              }`}
-                            >
-                              <span>🇺🇸</span>
-                              <span>Inglês</span>
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateHotspotContentType(hs.id, 'image')}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                                  isImageMode
+                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 border-indigo-500 shadow-sm'
+                                    : 'bg-transparent text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                <ImageIcon className="w-3.5 h-3.5" />
+                                <span>Apenas Imagem</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Se for APENAS IMAGEM */}
+                          {isImageMode ? (
+                            <div className="space-y-3 p-3 bg-indigo-50/40 dark:bg-indigo-950/20 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                  URL da Imagem que aparecerá no balão
+                                </label>
+                                <input
+                                  type="url"
+                                  value={hs.balloonImageUrl || ''}
+                                  onChange={(e) => handleUpdateHotspotBalloonImageUrl(hs.id, e.target.value)}
+                                  placeholder="https://exemplo.com/foto-do-objeto.png"
+                                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-indigo-500"
+                                />
+                              </div>
+
+                              {/* Preview da imagem se preenchida */}
+                              {hs.balloonImageUrl && (
+                                <div className="flex items-center gap-3">
+                                  <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center shrink-0">
+                                    <img
+                                      src={hs.balloonImageUrl}
+                                      alt="Prévia do balão"
+                                      className="max-w-full max-h-full object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    Esta imagem será exibida dentro do balão ao clicar no hotspot.
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Opção imagem+audio sync */}
+                              <div className="pt-1">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(hs.syncImageAudioClose)}
+                                    onChange={(e) => handleUpdateHotspotSyncClose(hs.id, e.target.checked)}
+                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600"
+                                  />
+                                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    imagem+audio sync
+                                  </span>
+                                </label>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 ml-6">
+                                  Quando ativada e tiver imagem e áudio, quando o áudio encerrar o balão se fecha automaticamente.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Se for MODO TEXTO NORMAL */
+                            <div className="space-y-2">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                  Palavra do Hotspot
+                                </label>
+                                <input
+                                  type="text"
+                                  value={currentWord}
+                                  onChange={(e) => handleUpdateHotspotWord(hs.id, e.target.value)}
+                                  placeholder="Digite a palavra que aparecerá no balão..."
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-semibold focus:bg-white dark:focus:bg-slate-800"
+                                />
+                              </div>
+
+                              {/* Idioma para leitura */}
+                              <div className="flex items-center gap-3 pt-1">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                  Idioma para leitura da palavra:
+                                </span>
+                                <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateHotspotLanguage(hs.id, 'pt')}
+                                    className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
+                                      wordLang === 'pt'
+                                        ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm'
+                                        : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                                  >
+                                    <span>🇧🇷</span>
+                                    <span>Português</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateHotspotLanguage(hs.id, 'en')}
+                                    className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
+                                      wordLang === 'en'
+                                        ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm'
+                                        : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                                  >
+                                    <span>🇺🇸</span>
+                                    <span>Inglês</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Secondary Word Field */}
+                              <div className="pt-1">
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                                  <span>Segunda Palavra / Subtítulo (opcional)</span>
+                                  <span className="text-[11px] text-slate-400">Exibida abaixo em cinza (quebra automática)</span>
+                                </label>
+                                <textarea
+                                  rows={2}
+                                  value={hs.secondaryText || ''}
+                                  onChange={(e) => handleUpdateHotspotSecondaryWord(hs.id, e.target.value)}
+                                  placeholder="Ex: tradução, frase de exemplo, explicação longa..."
+                                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:bg-white dark:focus:bg-slate-800 resize-y"
+                                />
+
+                                {/* Toggle: Ativar ou não leitura da Segunda Palavra / Subtítulo */}
+                                <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Volume2 className="w-4 h-4 text-indigo-500 shrink-0" />
+                                    <div>
+                                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                                        Ler também a segunda palavra / subtítulo
+                                      </span>
+                                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                        Na reprodução de voz (TTS), lê o subtítulo logo após a palavra principal
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                    <input
+                                      type="checkbox"
+                                      checked={Boolean(hs.readSecondaryText ?? formData.readSecondaryTextDefault)}
+                                      onChange={(e) => handleUpdateHotspotReadSecondaryText(hs.id, e.target.checked)}
+                                      className="sr-only peer"
+                                    />
+                                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* MP3 URL & System Speech */}
+                          <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                                <Music className="w-3.5 h-3.5 text-indigo-500" />
+                                <span>URL do Arquivo MP3 (opcional)</span>
+                              </label>
+                              <input
+                                type="url"
+                                value={hs.audioUrl || ''}
+                                onChange={(e) => handleUpdateHotspotAudioUrl(hs.id, e.target.value)}
+                                placeholder="https://exemplo.com/audio.mp3"
+                                disabled={hs.useSystemSpeech}
+                                className={`w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono transition-opacity ${
+                                  hs.useSystemSpeech
+                                    ? 'opacity-40 bg-slate-100 dark:bg-slate-900 cursor-not-allowed'
+                                    : 'bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800'
+                                }`}
+                              />
+                            </div>
+
+                            <label className="flex items-center gap-2 cursor-pointer pt-0.5">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(hs.useSystemSpeech)}
+                                onChange={(e) => handleUpdateHotspotSystemSpeech(hs.id, e.target.checked)}
+                                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600"
+                              />
+                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                Usar voz do próprio sistema (TTS nativo)
+                              </span>
+                              <span className="text-[11px] text-slate-400">
+                                (fala a palavra no idioma selecionado acima)
+                              </span>
+                            </label>
                           </div>
                         </div>
-
-                        {/* Secondary Word Field */}
-                        <div className="pt-1">
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-                            <span>Segunda Palavra / Subtítulo (opcional)</span>
-                            <span className="text-[11px] text-slate-400">Exibida abaixo em cinza menor</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={hs.secondaryText || ''}
-                            onChange={(e) => handleUpdateHotspotSecondaryWord(hs.id, e.target.value)}
-                            placeholder="Ex: substantivo, tradução, etc..."
-                            className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:bg-white dark:focus:bg-slate-800"
-                          />
-                        </div>
-                      </div>
-
-                      {/* MP3 URL & System Speech */}
-                      <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                            <Music className="w-3.5 h-3.5 text-indigo-500" />
-                            <span>URL do Arquivo MP3 (opcional)</span>
-                          </label>
-                          <input
-                            type="url"
-                            value={hs.audioUrl || ''}
-                            onChange={(e) => handleUpdateHotspotAudioUrl(hs.id, e.target.value)}
-                            placeholder="https://exemplo.com/audio.mp3"
-                            disabled={hs.useSystemSpeech}
-                            className={`w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono transition-opacity ${
-                              hs.useSystemSpeech
-                                ? 'opacity-40 bg-slate-100 dark:bg-slate-900 cursor-not-allowed'
-                                : 'bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800'
-                            }`}
-                          />
-                        </div>
-
-                        <label className="flex items-center gap-2 cursor-pointer pt-0.5">
-                          <input
-                            type="checkbox"
-                            checked={Boolean(hs.useSystemSpeech)}
-                            onChange={(e) => handleUpdateHotspotSystemSpeech(hs.id, e.target.checked)}
-                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600"
-                          />
-                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            Usar voz do próprio sistema (TTS nativo)
-                          </span>
-                          <span className="text-[11px] text-slate-400">
-                            (fala a palavra no idioma selecionado acima)
-                          </span>
-                        </label>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -888,6 +1085,64 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                       checked={formData.enableSpeechSynthesis !== false}
                       onChange={(e) =>
                         setFormData({ ...formData, enableSpeechSynthesis: e.target.checked })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Option: Leitura da Segunda Palavra / Subtítulo */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="w-4 h-4 text-indigo-500" />
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        Leitura da Segunda Palavra / Subtítulo (Voz / TTS)
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Ativa a leitura por voz do subtítulo após a palavra principal nos balões com texto secundário.
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.readSecondaryTextDefault)}
+                      onChange={(e) =>
+                        setFormData({ ...formData, readSecondaryTextDefault: e.target.checked })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Option: Hide Balloon 'X' Close Button */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <X className="w-4 h-4 text-indigo-500" />
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        Ocultar botão "X" de fechar no balão
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Quando ativado, o balão não exibe o botão X de fechar.
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.hideBalloonClose)}
+                      onChange={(e) =>
+                        setFormData({ ...formData, hideBalloonClose: e.target.checked })
                       }
                       className="sr-only peer"
                     />

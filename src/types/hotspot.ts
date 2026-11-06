@@ -29,6 +29,10 @@ export interface Hotspot {
   audioUrlsByLang?: Partial<Record<LanguageCode, string>>;
   useSystemSpeech?: boolean; // Whether the system speaks the word (Web Speech API)
   noAudio?: boolean; // Whether audio is disabled for this hotspot (text-only balloon, no play button)
+  contentType?: 'text' | 'image'; // 'text' (default) ou 'image' (apenas imagem no balão)
+  balloonImageUrl?: string; // URL da imagem para o balão quando contentType for 'image'
+  syncImageAudioClose?: boolean; // Se ativado e tiver imagem + áudio, fecha balão automaticamente ao encerrar o áudio
+  readSecondaryText?: boolean; // Se ativado, lê também a segunda palavra / subtítulo na síntese de voz
   phonetic?: string;
   description?: string;
   color?: string;
@@ -47,6 +51,7 @@ export interface HotspotProject {
   audioTriggerMode?: 'auto' | 'click'; // 'auto' ou 'click' (apenas no play)
   enableSpeechSynthesis?: boolean; // opção de ter ou não a opção de falar o texto do balão (TTS nativo)
   useSystemSpeechDefault?: boolean;
+  readSecondaryTextDefault?: boolean; // Opção global para leitura da segunda palavra / subtítulo
   showHoverTooltip: boolean; // default: false
   imageFormat: ImageFormatType; // '16:9' | '9:16' | 'free' | 'custom'
   pinStyle: PinStyleType; // 'number' | 'pin'
@@ -56,6 +61,7 @@ export interface HotspotProject {
   showPlayButtonInBalloon: boolean;
   enablePinPulse?: boolean; // Opção para pins cintilarem
   disableGlobalAudio?: boolean; // Opção de não ter áudio no balão nem botão de play
+  hideBalloonClose?: boolean; // Opção de não exibir o botão X de fechar no balão
   hotspots: Hotspot[];
   createdAt: string;
   updatedAt: string;
