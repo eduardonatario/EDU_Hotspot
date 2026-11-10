@@ -208,26 +208,35 @@ export function generateStandaloneHtml(project: HotspotProject): string {
       justify-content: center;
       font-size: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      transition: transform 0.15s, background 0.15s;
+      padding-left: 1px;
+    }
+    .balloon-image-play:hover {
+      background: #4f46e5;
+      transform: scale(1.1);
     }
     .balloon-play-btn {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      background: transparent;
-      color: #94a3b8;
+      background: #f8fafc;
+      color: #64748b;
       border: 1px solid #cbd5e1;
-      display: ${showPlayBtn && !project.disableGlobalAudio ? 'flex' : 'none'};
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 9px;
+      font-size: 10px;
       cursor: pointer;
       flex-shrink: 0;
       transition: all 0.15s;
+      margin-left: 6px;
     }
     .balloon-play-btn:hover {
-      background: #f1f5f9;
-      color: #475569;
-      border-color: #94a3b8;
+      background: #e2e8f0;
+      color: #4f46e5;
+      border-color: #818cf8;
     }
     .balloon-word {
       font-size: ${fontSize}px;
@@ -459,10 +468,16 @@ export function generateStandaloneHtml(project: HotspotProject): string {
               img.alt = wordText || 'Hotspot';
               imgContainer.appendChild(img);
 
-              if (!hs.noAudio && !projectData.disableGlobalAudio && (projectData.showPlayButtonInBalloon || hs.audioUrl)) {
-                const playBtn = document.createElement('div');
+              if (!hs.noAudio && !projectData.disableGlobalAudio && projectData.showPlayButtonInBalloon) {
+                const playBtn = document.createElement('button');
+                playBtn.type = 'button';
                 playBtn.className = 'balloon-image-play';
                 playBtn.innerHTML = '▶';
+                playBtn.title = 'Ouvir áudio';
+                playBtn.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  playAudio(hs);
+                });
                 imgContainer.appendChild(playBtn);
               }
 
@@ -476,11 +491,16 @@ export function generateStandaloneHtml(project: HotspotProject): string {
               wordSpan.innerText = wordText;
               mainRow.appendChild(wordSpan);
 
-              if (!hs.noAudio && !projectData.disableGlobalAudio) {
+              if (!hs.noAudio && !projectData.disableGlobalAudio && projectData.showPlayButtonInBalloon) {
                 const playBtn = document.createElement('button');
+                playBtn.type = 'button';
                 playBtn.className = 'balloon-play-btn';
                 playBtn.innerHTML = '▶';
                 playBtn.title = 'Ouvir pronúncia';
+                playBtn.addEventListener('click', function(e) {
+                  e.stopPropagation();
+                  playAudio(hs);
+                });
                 mainRow.appendChild(playBtn);
               }
 

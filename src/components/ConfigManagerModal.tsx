@@ -903,13 +903,18 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                 </div>
 
                 {/* Live Preview Box */}
-                <div className="mt-2 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                <div className="mt-2 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
                   <span
                     style={{ fontSize: `${formData.balloonFontSize}px` }}
                     className="font-bold text-slate-900 dark:text-white"
                   >
-                    Exemplo de Palavra ({formData.balloonFontSize}px)
+                    Exemplo de Palavra
                   </span>
+                  {formData.showPlayButtonInBalloon && !formData.disableGlobalAudio && (
+                    <span className="w-5 h-5 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-[10px] shrink-0 font-bold shadow-xs">
+                      ▶
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -943,7 +948,15 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
               </div>
 
               {/* Option: Show Play Button in Balloon */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2">
+              <div
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    showPlayButtonInBalloon: !formData.showPlayButtonInBalloon,
+                  })
+                }
+                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-2 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors select-none"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Play className="w-4 h-4 text-indigo-500" />
@@ -952,15 +965,18 @@ export const ConfigManagerModal: React.FC<ConfigManagerModalProps> = ({
                         Exibir pequeno botão de play dentro do balão
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Insere um botão circular com ícone de play (▶) ao lado da palavra no balão.
+                        Insere um botão circular com ícone de play (▶) ao lado da palavra ou sobre a imagem no balão.
                       </div>
                     </div>
                   </div>
 
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label
+                    onClick={(e) => e.stopPropagation()}
+                    className="relative inline-flex items-center cursor-pointer"
+                  >
                     <input
                       type="checkbox"
-                      checked={formData.showPlayButtonInBalloon}
+                      checked={Boolean(formData.showPlayButtonInBalloon)}
                       onChange={(e) =>
                         setFormData({ ...formData, showPlayButtonInBalloon: e.target.checked })
                       }

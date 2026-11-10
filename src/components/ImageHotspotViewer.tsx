@@ -313,7 +313,7 @@ export const ImageHotspotViewer: React.FC<ImageHotspotViewerProps> = ({
                         isPlaying={isPlaying}
                         fontSize={balloonFontSize}
                         showPlayButton={showPlayButtonInBalloon}
-                        disableAudio={disableGlobalAudio}
+                        disableAudio={disableGlobalAudio || Boolean(hotspot.noAudio)}
                         hideCloseButton={hideBalloonClose}
                       />
                     )}

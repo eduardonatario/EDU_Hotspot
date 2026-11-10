@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Play } from 'lucide-react';
+import { X, Play, Volume2 } from 'lucide-react';
 import { Hotspot, LanguageCode } from '../types/hotspot';
 
 interface SpeechBalloonProps {
@@ -92,9 +92,25 @@ export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
                     className="w-full h-full object-contain rounded-xl max-h-[190px]"
                   />
                   {showPlayButton && !disableAudio && (
-                    <div className="absolute bottom-2 right-2 bg-slate-900/80 text-white p-1.5 rounded-full shadow-md hover:bg-slate-900 transition-colors">
-                      <Play className={`w-3.5 h-3.5 fill-current ${isPlaying ? 'text-indigo-400 scale-110' : ''}`} />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPlayAudio(hotspot, currentLanguage);
+                      }}
+                      title={isPlaying ? 'Reproduzindo áudio' : 'Ouvir áudio'}
+                      className={`absolute bottom-2 right-2 rounded-full p-2 shadow-lg backdrop-blur-md transition-all border ${
+                        isPlaying
+                          ? 'bg-indigo-600 border-indigo-400 text-white scale-110 shadow-indigo-500/50'
+                          : 'bg-slate-900/80 border-white/20 text-white hover:bg-indigo-600 hover:scale-105'
+                      }`}
+                    >
+                      {isPlaying ? (
+                        <Volume2 className="w-3.5 h-3.5 text-white animate-pulse" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      )}
+                    </button>
                   )}
                 </div>
               ) : (
@@ -121,7 +137,7 @@ export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
                   {word}
                 </span>
 
-                {/* Play button: positioned AFTER the word, styled in cinza claro (light gray) */}
+                {/* Play button: positioned AFTER the word, styled as an elegant circular button */}
                 {showPlayButton && !disableAudio && (
                   <button
                     type="button"
@@ -129,12 +145,18 @@ export const SpeechBalloon: React.FC<SpeechBalloonProps> = ({
                       e.stopPropagation();
                       onPlayAudio(hotspot, currentLanguage);
                     }}
-                    title="Ouvir áudio"
-                    className={`p-1 rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shrink-0 ${
-                      isPlaying ? 'text-slate-600 dark:text-slate-200 scale-110' : ''
+                    title={isPlaying ? 'Reproduzindo áudio' : 'Ouvir pronúncia'}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 border ${
+                      isPlaying
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-600 dark:bg-indigo-950/60 dark:border-indigo-600 dark:text-indigo-400 scale-110 shadow-sm'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 hover:border-indigo-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:text-white'
                     }`}
                   >
-                    <Play className="w-3.5 h-3.5 fill-current" />
+                    {isPlaying ? (
+                      <Volume2 className="w-3 h-3 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                    ) : (
+                      <Play className="w-3 h-3 fill-current ml-0.5" />
+                    )}
                   </button>
                 )}
               </div>
