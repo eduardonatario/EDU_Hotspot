@@ -9,13 +9,15 @@ export function generateStandaloneHtml(project: HotspotProject): string {
 
   let formatCss = '';
   if (format === '16:9') {
-    formatCss = 'aspect-ratio: 16/9; width: 920px; max-width: 90vw; max-height: 76vh;';
+    formatCss = 'aspect-ratio: 16/9; width: 100%; max-width: 1000px; height: auto;';
   } else if (format === '9:16') {
-    formatCss = 'aspect-ratio: 9/16; height: 74vh; max-width: 440px;';
+    formatCss = 'aspect-ratio: 9/16; width: 100%; max-width: 460px; height: auto;';
   } else if (format === 'custom') {
-    formatCss = `width: ${project.customWidth || 1200}px; height: ${project.customHeight || 800}px; max-width: 92vw; max-height: 76vh;`;
+    const cWidth = project.customWidth || 1200;
+    const cHeight = project.customHeight || 800;
+    formatCss = `width: 100%; max-width: ${cWidth}px; aspect-ratio: ${cWidth} / ${cHeight}; height: auto;`;
   } else {
-    formatCss = 'max-width: 100%; max-height: 76vh;';
+    formatCss = 'width: 100%; height: auto; max-width: 100%;';
   }
 
   // Generate inner HTML & CSS for the Shadow DOM
@@ -42,13 +44,13 @@ export function generateStandaloneHtml(project: HotspotProject): string {
     }
     .canvas-wrapper {
       position: relative;
-      display: inline-block;
+      display: block;
+      width: 100%;
+      margin: 0 auto;
       border-radius: 16px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
       border: none;
       overflow: visible;
-      max-width: 100%;
-      height: auto;
       ${formatCss}
     }
     .main-image {
